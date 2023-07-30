@@ -111,6 +111,7 @@ class Test_contains_underscore(unittest.TestCase):
         expr = f'x[0:-1:({expr})]'
         self.assert_contains_underscore(expr)
 
+
 class Test_add_underscore(unittest.TestCase):
     def add_underscore(self, code, expected):
         self.assertEqual(ast.unparse(ni.add_underscore(code)), expected)
@@ -148,6 +149,35 @@ class Test_add_underscore(unittest.TestCase):
     def test_lambda(self):
         self.add_underscore('foo(lambda _: _)', 'foo(_, lambda _: _)')
 
+
+class Test_ni(unittest.TestCase):
+    def assert_output(self, args, lines, expected):
+        self.assertListEqual(list(ni.ni(args, lines)), list(expected))
+
+    def test_basic(self):
+        self.assert_output(('sorted', 'reversed'),
+                ['5', '2', '4', '3', '1'],
+                ['5', '4', '3', '2', '1'])
+
+    def test_reduce(self):
+        self.assert_output(('sorted', 'reversed', '"|".join'),
+                ['5', '2', '4', '3', '1'],
+                ['5|4|3|2|1'])
+
+    def test_method(self):
+        self.assert_output(('list', '.pop()'),
+                ['5', '2', '4', '3', '1'],
+                ['1'])
+
+    def test_method(self):
+        self.assert_output(('(int(x) for x in _)', '(x ** 2 for x in _)'),
+                ['1', '2', '3', '4', '5'],
+                [1, 4, 9, 16, 25])
+
+    def test_line(self):
+        self.assertListEqual(
+                list(ni.ni(('.upper()', '.strip()'), ' test input ')),
+                ['TEST INPUT'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -79,7 +79,7 @@ def add_underscore(code : str) -> ast.Expr:
             return expr
         case ast.Attribute() | ast.Name():
             return ast.Call(func=expr, args=[underscore], keywords=[])
-    raise Exception("Unmatched:\n" + ast.dump(expr, indent=4))
+    return expr
 
 def get_lines():
     while True:
@@ -94,20 +94,23 @@ def ni(args, lines):
         code = 'lambda _: ' + ast.unparse(add_underscore(arg))
         output = eval(code, {})(output)
     if isinstance(output, str):
-        print(output)
+        yield output
     else:
         try:
             it = iter(output)
         except TypeError:
-            print(output)
+            yield output
         else:
-            for line in it:
-                print(line)
+            yield from it
 
 if __name__ == '__main__':
-    output = get_lines()
+    lines = get_lines()
     if sys.argv[1:] and sys.argv[1] == '-l':
-        for line in output:
-            ni(sys.argv[2:], line)
+        for line in lines:
+            for outline in ni(sys.argv[2:], line):
+                if outline is not None:
+                    print(outline)
     else:
-        ni(sys.argv[1:], get_lines())
+        for outline in ni(sys.argv[1:], lines):
+            if outline is not None:
+                print(outline)
